@@ -47,5 +47,5 @@ def setup_logging() -> None:
     root.addHandler(file_handler)
 
     # Keep third-party libraries from flooding the logs with debug noise
-    for noisy in ("httpx", "httpcore", "openai"):
+    for noisy in ("httpx", "httpx2", "httpcore", "openai"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
