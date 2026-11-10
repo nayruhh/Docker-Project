@@ -15,6 +15,16 @@ services:
     restart: unless-stopped
     # No published port: only the api container needs to reach it.
 
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    # No published port: only the api container needs to reach it.
+
   api:
     build: .
     ports:
@@ -24,10 +34,13 @@ services:
     environment:
       # Overrides any DATABASE_URL in .env, which points at localhost for local runs
       DATABASE_URL: postgresql://llmuser:${POSTGRES_PASSWORD}@db:5432/llmdb
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - ./logs:/app/logs
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 

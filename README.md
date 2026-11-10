@@ -15,6 +15,8 @@ POSTGRES_PASSWORD=choose-a-password
 DATABASE_URL=postgresql://llmuser:choose-a-password@localhost:5432/llmdb
 ```
 
+`REDIS_URL` (optional) turns on the answer cache; `CACHE_TTL_SECONDS` (default 3600) sets how long answers are kept.
+
 `DATABASE_URL` is used when you run the API directly. Docker Compose builds its own URL
 from `POSTGRES_PASSWORD` and connects to its `db` service. Storage is optional: without a
 database the API still answers, and logs that answers are not being stored.
@@ -50,11 +52,22 @@ docker build -t llm-api .
 docker run -d -p 8000:8000 --env-file .env -v "$(pwd)/logs:/app/logs" llm-api
 ```
 
-Compose starts two services: `api` and `db` (PostgreSQL 17, data in the `pgdata` volume).
+Compose starts three services: `api`, `db` (PostgreSQL 17, data in the `pgdata` volume) and `redis` (answer cache).
 The database is not exposed on the host; only the API reaches it. Use `docker compose down -v`
 to also delete the stored data.
 
 Logs are written to `./logs/app.log` on the host (mounted at `/app/logs`).
+
+## Redis answer cache
+
+When `REDIS_URL` is set, `POST /ask` checks Redis first. A repeated question (ignoring letter case
+and extra spaces) returns the stored answer without calling Gemini, and the response header
+`X-Cache` says `HIT` or `MISS`. Answers expire after `CACHE_TTL_SECONDS`. If Redis is not
+configured or is down, the API simply calls the model every time and logs the problem.
+
+```bash
+docker run -d --name llm-redis -p 6379:6379 redis:7
+```
 
 ## Using your own Postgres container (optional)
 
