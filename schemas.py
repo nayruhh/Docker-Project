@@ -1,5 +1,7 @@
 """Request/response validation models."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 MAX_QUESTION_LENGTH = 2000
@@ -20,3 +22,10 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
+
+
+class HistoryItem(BaseModel):
+    id: int
+    question: str
+    answer: str
+    created_at: datetime
