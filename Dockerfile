@@ -9,7 +9,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
-COPY main.py routes.py llm.py schemas.py logging_config.py ./
+COPY main.py routes.py llm.py schemas.py logging_config.py db.py ./
 
 ENV LOG_DIR=/app/logs
 EXPOSE 8000
