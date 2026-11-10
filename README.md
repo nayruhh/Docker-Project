@@ -11,7 +11,13 @@ Copy `.env.example` to `.env` and fill it in (get a free key at https://aistudio
 GEMINI_API_KEY=your-key-here
 GEMINI_MODEL=gemini-3.5-flash
 LOG_LEVEL=INFO        # optional: DEBUG, INFO, WARNING, ERROR
+POSTGRES_PASSWORD=choose-a-password
+DATABASE_URL=postgresql://llmuser:choose-a-password@localhost:5432/llmdb
 ```
+
+`DATABASE_URL` is used when you run the API directly. Docker Compose builds its own URL
+from `POSTGRES_PASSWORD` and connects to its `db` service. Storage is optional: without a
+database the API still answers, and logs that answers are not being stored.
 
 `.env` is gitignored and never baked into the Docker image.
 
@@ -44,7 +50,20 @@ docker build -t llm-api .
 docker run -d -p 8000:8000 --env-file .env -v "$(pwd)/logs:/app/logs" llm-api
 ```
 
+Compose starts two services: `api` and `db` (PostgreSQL 17, data in the `pgdata` volume).
+The database is not exposed on the host; only the API reaches it. Use `docker compose down -v`
+to also delete the stored data.
+
 Logs are written to `./logs/app.log` on the host (mounted at `/app/logs`).
+
+## Using your own Postgres container (optional)
+
+```bash
+docker run -d --name llm-postgres -p 5432:5432 -e POSTGRES_USER=llmuser   -e POSTGRES_PASSWORD=YOUR_PASSWORD -e POSTGRES_DB=llmdb   -v llm-pgdata:/var/lib/postgresql/data postgres:17
+```
+
+Then set `DATABASE_URL` in `.env` and run the API locally (`uv run uvicorn main:app`).
+The `questions` table is created automatically at startup.
 
 ## API
 
@@ -57,6 +76,9 @@ Logs are written to `./logs/app.log` on the host (mounted at `/app/logs`).
 | model rate limit / quota | `429` |
 | model timeout (30s) | `504` |
 | provider error, bad key, empty answer | `502` |
+
+`GET /history?limit=20` returns the most recent stored questions and answers, newest first
+(`limit` 1-100, otherwise `422`; `503` if the database is unavailable).
 
 ## Logging
 
@@ -72,3 +94,6 @@ Logs are written to `./logs/app.log` on the host (mounted at `/app/logs`).
 ```bash
 uv run pytest -v
 ```
+
+Tests that use a real database are skipped unless `TEST_DATABASE_URL` is set, e.g.
+`TEST_DATABASE_URL=postgresql://user:pass@localhost:5432/db uv run pytest`.

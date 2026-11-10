@@ -121,3 +121,38 @@ tests/test_logging_config.py::test_invalid_log_level_falls_back_to_info PASSED [
 tests/test_logging_config.py::test_calling_setup_twice_does_not_duplicate_handlers PASSED [100%]
 ============================= 20 passed in 2.26s ==============================
 ```
+
+## 4. PostgreSQL storage (`feat-postgres-storage`)
+
+Verified against a real PostgreSQL 17 container, locally and via `docker compose`.
+
+```
+$ curl -X POST http://localhost:8000/ask -H 'Content-Type: application/json' -d '{"question":"Name one planet."}'
+{"answer":"Mars"}
+HTTP 200
+
+$ curl http://localhost:8000/history
+[{"id":1,"question":"Name one planet.","answer":"Mars","created_at":"2026-11-10T10:37:11.042718Z"}]
+HTTP 200
+
+$ curl "http://127.0.0.1:8002/history?limit=0"
+{"detail":[{"type":"greater_than_equal","loc":["query","limit"],"msg":"Input should be greater than or equal to 1","input":"0","ctx":{"ge":1}}]}
+HTTP 422
+```
+
+Row in the database after the local run:
+
+```
+ id |            question            |               answer                |          created_at
+----+--------------------------------+-------------------------------------+------------------------------
+  6 | What is the capital of France? | The capital of France is **Paris**. | 2026-11-10 10:36:09.02574+00
+```
+
+Log lines:
+
+```
+2026-11-10 10:37:02 | INFO     | db:39 | Database ready
+2026-11-10 10:37:11 | INFO     | db:52 | Saved question/answer to database
+```
+
+Automated tests: `30 passed` (27 mocked + 3 against a real Postgres via `TEST_DATABASE_URL`).
