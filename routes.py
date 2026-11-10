@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 
+from cache import get_cached, set_cached
 from db import get_history, save_qa
 from llm import ask_model
 from schemas import AskRequest, AskResponse, HistoryItem
@@ -13,9 +14,17 @@ router = APIRouter()
 
 
 @router.post("/ask", response_model=AskResponse)
-def ask(req: AskRequest):
+def ask(req: AskRequest, response: Response):
     logger.info("POST /ask received")
-    answer = ask_model(req.question)
+    answer = get_cached(req.question)
+    if answer is not None:
+        logger.info("Cache hit")
+        response.headers["X-Cache"] = "HIT"
+    else:
+        logger.info("Cache miss")
+        answer = ask_model(req.question)
+        set_cached(req.question, answer)
+        response.headers["X-Cache"] = "MISS"
     save_qa(req.question, answer)
     return AskResponse(answer=answer)
 
