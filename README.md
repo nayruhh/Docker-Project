@@ -110,3 +110,18 @@ uv run pytest -v
 
 Tests that use a real database are skipped unless `TEST_DATABASE_URL` is set, e.g.
 `TEST_DATABASE_URL=postgresql://user:pass@localhost:5432/db uv run pytest`.
+
+## Continuous integration (GitHub Actions)
+
+| Workflow | What it checks |
+|---|---|
+| `ci.yml` | `pytest` with real Postgres and Redis service containers (no secrets needed) |
+| `lint.yml` | `ruff check` and `ruff format --check` |
+| `docker.yml` | `docker compose config`, builds the image and smoke-tests the container |
+| `dependabot.yml` | Weekly update PRs for Python packages, Docker images and Actions |
+
+Run the same checks locally:
+
+```bash
+uv run ruff check . && uv run ruff format --check . && uv run pytest
+```
