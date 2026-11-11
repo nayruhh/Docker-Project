@@ -1,6 +1,6 @@
 import pytest
 
-import routes
+from app.api import routes
 
 
 @pytest.fixture(autouse=True)

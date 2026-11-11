@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-import logging_config
+from app.core import logging_config
 
 
 @pytest.fixture(autouse=True)

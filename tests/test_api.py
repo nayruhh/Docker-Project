@@ -4,9 +4,9 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-import routes
-from main import app
-from schemas import MAX_QUESTION_LENGTH
+from app.api import routes
+from app.api.schemas import MAX_QUESTION_LENGTH
+from app.main import app
 
 
 @pytest.fixture

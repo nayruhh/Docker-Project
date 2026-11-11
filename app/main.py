@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-from db import init_db
-from logging_config import setup_logging
-from routes import router
+from app.api.routes import router
+from app.core.logging_config import setup_logging
+from app.services.db import init_db
 
 setup_logging()
 logger = logging.getLogger(__name__)

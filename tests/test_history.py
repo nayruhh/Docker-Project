@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 import pytest
 from fastapi.testclient import TestClient
 
-import routes
-from main import app
+from app.api import routes
+from app.main import app
 
 
 @pytest.fixture

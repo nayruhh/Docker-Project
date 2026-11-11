@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-import db
+from app.services import db
 
 URL = os.getenv("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL not set")

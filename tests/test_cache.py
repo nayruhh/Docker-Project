@@ -4,9 +4,9 @@ import pytest
 import redis
 from fastapi.testclient import TestClient
 
-import cache
-import routes
-from main import app
+from app.api import routes
+from app.main import app
+from app.services import cache
 
 
 # ---- API behaviour (cache faked with a dict) -------------------------------
