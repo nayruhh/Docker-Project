@@ -1,0 +1,33 @@
+name: Docker
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config -q
+        env:
+          POSTGRES_PASSWORD: ci-password
+
+      - name: Build image
+        run: docker build -t llm-api:ci .
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name api -p 8000:8000 -e GEMINI_API_KEY=ci-dummy-key llm-api:ci
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/docs > /dev/null && exit 0
+            sleep 2
+          done
+          echo "API did not start"; docker logs api; exit 1
