@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -35,7 +35,7 @@ def test_history_returns_rows(monkeypatch, client):
         "id": 1,
         "question": "q",
         "answer": "a",
-        "created_at": datetime(2026, 11, 10, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 11, 10, tzinfo=UTC),
     }
     monkeypatch.setattr(routes, "get_history", lambda limit: [row][:limit])
     r = client.get("/history")

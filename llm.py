@@ -29,18 +29,18 @@ def ask_model(question: str) -> str:
             model=MODEL,
             messages=[{"role": "user", "content": question}],
         )
-    except APITimeoutError:
+    except APITimeoutError as e:
         logger.error("Model request timed out")
-        raise HTTPException(status_code=504, detail="The model took too long to respond.")
-    except RateLimitError:
+        raise HTTPException(status_code=504, detail="The model took too long to respond.") from e
+    except RateLimitError as e:
         logger.warning("Model rate limit or quota reached")
-        raise HTTPException(status_code=429, detail="Model rate limit or quota reached.")
-    except AuthenticationError:
+        raise HTTPException(status_code=429, detail="Model rate limit or quota reached.") from e
+    except AuthenticationError as e:
         logger.error("Authentication with the model provider failed")
-        raise HTTPException(status_code=502, detail="Invalid or missing GEMINI_API_KEY.")
+        raise HTTPException(status_code=502, detail="Invalid or missing GEMINI_API_KEY.") from e
     except OpenAIError as e:
         logger.exception("Unexpected model error")
-        raise HTTPException(status_code=502, detail=f"Model error: {e}")
+        raise HTTPException(status_code=502, detail=f"Model error: {e}") from e
 
     answer = (res.choices[0].message.content or "").strip() if res.choices else ""
     if not answer:

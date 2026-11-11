@@ -60,9 +60,7 @@ def test_console_respects_log_level_but_file_keeps_debug(monkeypatch, tmp_path, 
 def test_invalid_log_level_falls_back_to_info(monkeypatch):
     monkeypatch.setenv("LOG_LEVEL", "not-a-level")
     logging_config.setup_logging()
-    console = next(
-        h for h in logging.getLogger().handlers if type(h).__name__ == "StreamHandler"
-    )
+    console = next(h for h in logging.getLogger().handlers if type(h).__name__ == "StreamHandler")
     assert console.level == logging.INFO
 
 

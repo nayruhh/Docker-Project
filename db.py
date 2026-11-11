@@ -58,7 +58,6 @@ def get_history(limit: int = 20) -> list[dict]:
     """Return the most recent questions, newest first. Raises if the DB is unavailable."""
     with _connect() as conn:
         return conn.execute(
-            "SELECT id, question, answer, created_at FROM questions "
-            "ORDER BY id DESC LIMIT %s",
+            "SELECT id, question, answer, created_at FROM questions ORDER BY id DESC LIMIT %s",
             (limit,),
         ).fetchall()

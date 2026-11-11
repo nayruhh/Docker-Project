@@ -27,4 +27,5 @@ app = FastAPI(title="Simple LLM API", lifespan=lifespan)
 def root():
     return RedirectResponse("/docs")
 
+
 app.include_router(router)

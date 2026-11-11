@@ -36,4 +36,4 @@ def history(limit: int = Query(20, ge=1, le=100, description="How many rows to r
         return get_history(limit)
     except Exception as e:
         logger.error("Could not read history: %s", e)
-        raise HTTPException(status_code=503, detail="Database unavailable.")
+        raise HTTPException(status_code=503, detail="Database unavailable.") from e
