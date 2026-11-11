@@ -3,6 +3,26 @@
 A small FastAPI service: `POST /ask` takes a question and returns an answer from a Gemini model.
 Built with [uv](https://docs.astral.sh/uv/), FastAPI, and the OpenAI-compatible Gemini endpoint.
 
+## Project structure
+
+```
+app/
+  main.py                  # creates the FastAPI app, wires logging and startup
+  api/
+    routes.py              # HTTP endpoints: POST /ask, GET /history
+    schemas.py             # request/response validation models
+  services/
+    llm.py                 # Gemini client and error handling
+    cache.py               # Redis answer cache
+    db.py                  # PostgreSQL storage
+  core/
+    logging_config.py      # logging setup (console + rotating file)
+tests/                     # pytest suite
+docs/                      # test evidence
+.github/                   # GitHub Actions workflows and Dependabot
+Dockerfile, docker-compose.yml, pyproject.toml, .env.example
+```
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill it in (get a free key at https://aistudio.google.com/apikey):
@@ -27,7 +47,7 @@ database the API still answers, and logs that answers are not being stored.
 
 ```bash
 uv sync
-uv run uvicorn main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 Open http://127.0.0.1:8000/docs (Swagger UI) to try `POST /ask`.
@@ -75,7 +95,7 @@ docker run -d --name llm-redis -p 6379:6379 redis:7
 docker run -d --name llm-postgres -p 5432:5432 -e POSTGRES_USER=llmuser   -e POSTGRES_PASSWORD=YOUR_PASSWORD -e POSTGRES_DB=llmdb   -v llm-pgdata:/var/lib/postgresql/data postgres:17
 ```
 
-Then set `DATABASE_URL` in `.env` and run the API locally (`uv run uvicorn main:app`).
+Then set `DATABASE_URL` in `.env` and run the API locally (`uv run uvicorn app.main:app`).
 The `questions` table is created automatically at startup.
 
 ## API
@@ -95,7 +115,7 @@ The `questions` table is created automatically at startup.
 
 ## Logging
 
-`logging_config.py` configures the root logger once at startup:
+`app/core/logging_config.py` configures the root logger once at startup:
 
 - **Console**: level from `LOG_LEVEL` (default `INFO`; invalid values fall back to `INFO`).
 - **File** `logs/app.log`: always `DEBUG`+, rotated at 1 MB with 3 backups.

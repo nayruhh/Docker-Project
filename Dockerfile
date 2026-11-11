@@ -9,8 +9,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
-COPY main.py routes.py llm.py schemas.py logging_config.py db.py cache.py ./
+COPY app ./app
 
 ENV LOG_DIR=/app/logs
 EXPOSE 8000
-CMD ["uv", "run", "--no-dev", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "--no-dev", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
