@@ -1,19 +1,22 @@
+# Three services on one Compose network: backend -> postgres, backend -> redis.
+# Only the backend is published to the host. Credentials come from the environment
+# (a .env file next to this file, see .env.example), never from this file.
+
 services:
-  db:
+  postgres:
     image: postgres:17
     environment:
-      POSTGRES_USER: llmuser
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: llmdb
+      POSTGRES_USER: ${POSTGRES_USER:-qa_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-qa_db}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U llmuser -d llmdb"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
     restart: unless-stopped
-    # No published port: only the api container needs to reach it.
 
   redis:
     image: redis:7
@@ -23,26 +26,32 @@ services:
       timeout: 3s
       retries: 10
     restart: unless-stopped
-    # No published port: only the api container needs to reach it.
 
-  api:
+  backend:
     build: .
     ports:
       - "8000:8000"
-    env_file:
-      - .env
     environment:
-      # Overrides any DATABASE_URL in .env, which points at localhost for local runs
-      DATABASE_URL: postgresql://llmuser:${POSTGRES_PASSWORD}@db:5432/llmdb
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?Set GEMINI_API_KEY in .env}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-3600}
+      # Reach the other services by their Compose service names, not localhost
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-qa_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-qa_db}
       REDIS_URL: redis://redis:6379/0
     volumes:
-      - ./logs:/app/logs
+      - app_logs:/app/logs
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  postgres_data:
+  app_logs:
