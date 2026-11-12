@@ -11,6 +11,8 @@ import os
 import redis
 from dotenv import load_dotenv
 
+from app.core.text import normalize_question
+
 load_dotenv()
 logger = logging.getLogger(__name__)
 
@@ -33,8 +35,7 @@ def _get_client() -> redis.Redis | None:
 
 def _key(question: str) -> str:
     # Same question in different letter case / spacing shares one cache entry
-    normalised = " ".join(question.casefold().split())
-    return "ask:" + hashlib.sha256(normalised.encode()).hexdigest()
+    return "ask:" + hashlib.sha256(normalize_question(question).encode()).hexdigest()
 
 
 def get_cached(question: str) -> str | None:

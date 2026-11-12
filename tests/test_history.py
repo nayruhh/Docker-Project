@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -32,7 +33,8 @@ def test_failed_ask_is_not_saved(monkeypatch, no_real_database):
 
 def test_history_returns_rows(monkeypatch, client):
     row = {
-        "id": 1,
+        "id": uuid.uuid4(),
+        "cache_hit": False,
         "question": "q",
         "answer": "a",
         "created_at": datetime(2026, 11, 10, tzinfo=UTC),

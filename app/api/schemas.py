@@ -1,5 +1,6 @@
 """Request/response validation models."""
 
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -25,7 +26,8 @@ class AskResponse(BaseModel):
 
 
 class HistoryItem(BaseModel):
-    id: int
+    id: uuid.UUID
     question: str
     answer: str
+    cache_hit: bool
     created_at: datetime

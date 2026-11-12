@@ -5,8 +5,8 @@ import logging
 from fastapi import APIRouter, HTTPException, Query, Response
 
 from app.api.schemas import AskRequest, AskResponse, HistoryItem
+from app.db.crud import get_history, save_qa
 from app.services.cache import get_cached, set_cached
-from app.services.db import get_history, save_qa
 from app.services.llm import ask_model
 
 logger = logging.getLogger(__name__)

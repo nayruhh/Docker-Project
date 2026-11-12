@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 
 from app.api.routes import router
 from app.core.logging_config import setup_logging
-from app.services.db import init_db
+from app.db.session import check_database
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    check_database()
     logger.info("Application started")
     yield
     logger.info("Application stopped")
