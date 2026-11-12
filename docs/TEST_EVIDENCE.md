@@ -156,3 +156,67 @@ Log lines:
 ```
 
 Automated tests: `30 passed` (27 mocked + 3 against a real Postgres via `TEST_DATABASE_URL`).
+
+## 5. Redis flow and duplicate-question strategy
+
+Run against a real PostgreSQL and a real Redis (model stubbed, because it needs an API key):
+
+```
+200 MISS What is the capital of France?
+200 HIT  what is  the CAPITAL of france?
+200 MISS Something else?
+model calls: 2          (three submissions, the model ran twice)
+```
+
+```
+    id    |            question             |      normalized_question       | cache_hit
+----------+---------------------------------+--------------------------------+-----------
+ 054dec1c | What is the capital of France?  | what is the capital of france? | f
+ 1e896c56 | what is  the CAPITAL of france? | what is the capital of france? | t
+ 93443380 | Something else?                 | something else?                | f
+```
+
+Each submission has its own row (new UUID), the original question is kept as typed, and the
+cache hit is marked. The Redis entries had a TTL of 3599 seconds (1 hour).
+
+Automated tests (`tests/test_cache_flow.py`) assert the exact call order:
+MISS = `redis_get, generate, save, redis_set`; HIT = `redis_get, save(cache_hit=True)` with no
+generation; a failed generation is neither saved nor cached; and the API still answers when
+Redis is unreachable.
+
+## 6. Docker Compose stack
+
+```
+SERVICE    STATUS                    PORTS
+backend    Up 5 seconds (healthy)    0.0.0.0:8000->8000/tcp
+postgres   Up 11 seconds (healthy)   5432/tcp
+redis      Up 11 seconds (healthy)   6379/tcp
+```
+
+Only the backend is published to the host. The backend runs as a non-root user and applies
+the migration when it starts:
+
+```
+$ docker compose exec backend id
+uid=10001(appuser) gid=10001(appuser) groups=10001(appuser)
+
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001, create qa_records
+Database ready
+```
+
+It connects by service name (`POSTGRES_HOST=postgres`, `REDIS_URL=redis://redis:6379/0`).
+
+### Records survive container removal
+
+```
+before: [{"id":"bb66a5e6-8963-40c2-9db8-7f50520014fe","question":"Will I survive a restart?","answer":"Yes, via the postgres_data volume", ...}]
+
+$ docker compose down        # removes all three containers and the network, keeps the volume
+Container qademo-backend-1 Removed   Container qademo-redis-1 Removed   Container qademo-postgres-1 Removed
+
+$ docker compose up -d --wait
+after:  [{"id":"bb66a5e6-8963-40c2-9db8-7f50520014fe","question":"Will I survive a restart?","answer":"Yes, via the postgres_data volume", ...}]
+```
+
+The same record with the same UUID is returned after every container was removed and recreated.
+The multi-stage image is about 77 MB, compared with about 336 MB for the earlier single-stage image.
