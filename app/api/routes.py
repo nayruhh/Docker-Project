@@ -15,17 +15,27 @@ router = APIRouter()
 
 @router.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest, response: Response):
+    """Answer a question, using Redis to skip generation for repeated questions.
+
+    HIT:  return the cached answer (no generation), but still record this submission.
+    MISS: generate the answer -> save it in PostgreSQL -> cache it in Redis -> return it.
+    Redis problems count as a MISS, so the API keeps working without it.
+    """
     logger.info("POST /ask received")
-    answer = get_cached(req.question)
-    if answer is not None:
+    question = req.question
+
+    cached = get_cached(question)
+    if cached is not None:
         logger.info("Cache hit")
         response.headers["X-Cache"] = "HIT"
-    else:
-        logger.info("Cache miss")
-        answer = ask_model(req.question)
-        set_cached(req.question, answer)
-        response.headers["X-Cache"] = "MISS"
-    save_qa(req.question, answer)
+        save_qa(question, cached, cache_hit=True)
+        return AskResponse(answer=cached)
+
+    logger.info("Cache miss")
+    response.headers["X-Cache"] = "MISS"
+    answer = ask_model(question)
+    save_qa(question, answer, cache_hit=False)
+    set_cached(question, answer)
     return AskResponse(answer=answer)
 
 
